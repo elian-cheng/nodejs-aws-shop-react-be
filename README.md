@@ -1,7 +1,8 @@
 # nodejs-aws-shop-react-be
 
 Back-end for nodejs-aws-shop-react repo
-[Documentation](./doc/api.yaml)
+
+[Documentation](./product-service/doc/api.yaml)
 
 ## Deploy link
 
