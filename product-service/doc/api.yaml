@@ -1,0 +1,75 @@
+openapi: 3.0.0
+info:
+  title: Product Service API
+  description: 'Product Service for [Elian-AWS-React-Shop](https://github.com/elian-cheng/nodejs-aws-shop-react).'
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: https://d0jroimskb.execute-api.eu-north-1.amazonaws.com
+tags:
+  - name: Products
+    description: Product related endpoints
+paths:
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: Get array of all available products
+      operationId: getProductsList
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '500':
+          description: Internal Server Error, default server error code
+  /products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Get a product by productId
+      description: Returns a single product
+      operationId: getProductsById
+      parameters:
+        - name: productId
+          in: path
+          description: ID of the product
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Get product by productId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+        '500':
+          description: Internal Server Error, default server error code
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        title:
+          type: string
+          example: 'Lenovo IdeaPad L3'
+        description:
+          type: string
+          example: 'Powerful laptop with FHD display, stereo speakers, and long battery life. Ideal for work, school, and entertainment.'
+        price:
+          type: number
+          example: 930.85
