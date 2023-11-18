@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "description": "product-service-api",
   "scripts": {
-    "test": "jest"
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "lint": "eslint --ignore-path .gitignore --fix src",
+    "prettier": "prettier src --write",
+    "cdk": "cdk",
+    "cdk:bs": "npx cdk bootstrap",
+    "cdk:deploy": "npx cdk deploy",
+    "cdk:destroy": "npx cdk destroy"
   },
   "repository": {
     "type": "git",
