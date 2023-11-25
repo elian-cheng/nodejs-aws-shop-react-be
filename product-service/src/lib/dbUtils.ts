@@ -20,34 +20,38 @@ const productsTableName = process.env.PRODUCTS_TABLE_NAME ?? '';
 const stocksTableName = process.env.STOCKS_TABLE_NAME ?? '';
 
 export const getProductsList = async (): Promise<IAvailableProduct[]> => {
-  const { Items: productItems } = await dbClient.send(
-    new ScanCommand({
-      TableName: productsTableName,
-    })
-  );
+  try {
+    const { Items: productItems } = await dbClient.send(
+      new ScanCommand({
+        TableName: productsTableName,
+      })
+    );
 
-  const { Items: stockItems } = await dbClient.send(
-    new ScanCommand({
-      TableName: stocksTableName,
-    })
-  );
+    const { Items: stockItems } = await dbClient.send(
+      new ScanCommand({
+        TableName: stocksTableName,
+      })
+    );
 
-  const products = (productItems ?? []).map((p) => unmarshall(p) as IProduct);
-  const stocks = (stockItems ?? []).map((s) => unmarshall(s) as IStock);
+    const products = (productItems ?? []).map((p) => unmarshall(p) as IProduct);
+    const stocks = (stockItems ?? []).map((s) => unmarshall(s) as IStock);
 
-  if (!products.length) {
-    return [];
+    if (!products.length) {
+      return [];
+    }
+
+    const availableProducts: IAvailableProduct[] = products.map((p) => {
+      const stock = stocks.find((s) => s.product_id === p.id);
+      return {
+        ...p,
+        count: stock?.count || 0,
+      };
+    });
+
+    return availableProducts;
+  } catch (e) {
+    throw e;
   }
-
-  const availableProducts: IAvailableProduct[] = products.map((p) => {
-    const stock = stocks.find((s) => s.product_id === p.id);
-    return {
-      ...p,
-      count: stock?.count || 0,
-    };
-  });
-
-  return availableProducts;
 };
 
 export const getProductById = async (
