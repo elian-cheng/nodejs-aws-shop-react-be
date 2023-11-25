@@ -13,7 +13,7 @@ export enum StatusCodes {
 
 export enum ErrorMessages {
   PRODUCT_ID_NOT_DEFINED = 'Product id is not defined',
-  PRODUCT_NOT_FOUND = 'Product Not Found',
+  PRODUCT_NOT_FOUND = 'Product not found',
   PRODUCT_CREATE_ERROR = 'Product data is absent or incorrect',
-  INTERNAL_SERVER_ERROR = 'Internal Server Error',
+  INTERNAL_SERVER_ERROR = 'Internal server error',
 }
