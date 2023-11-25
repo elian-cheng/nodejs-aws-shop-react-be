@@ -3,7 +3,7 @@ export enum Table {
   STOCKS = 'stocks',
 }
 
-export enum HttpStatus {
+export enum StatusCodes {
   OK = 200,
   CREATED = 201,
   BAD_REQUEST = 400,
@@ -14,6 +14,6 @@ export enum HttpStatus {
 export enum ErrorMessages {
   PRODUCT_ID_NOT_DEFINED = 'Product id is not defined',
   PRODUCT_NOT_FOUND = 'Product Not Found',
-  PRODUCT_CREATE_ERROR = 'Product payload is absent or incorrect',
+  PRODUCT_CREATE_ERROR = 'Product data is absent or incorrect',
   INTERNAL_SERVER_ERROR = 'Internal Server Error',
 }

@@ -1,5 +1,7 @@
+import { StatusCodes } from './constants';
+
 export const sendResponse = (
-  statusCode: number = 200,
+  statusCode: number = StatusCodes.OK,
   body?: unknown,
   headers?: object
 ) => {
