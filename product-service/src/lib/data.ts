@@ -1,12 +1,12 @@
-import { IProduct } from '../schemas/product';
+import { IProduct, IStock } from '../schemas/product';
 
-const productData: IProduct[] = [
+export const productData: IProduct[] = [
   {
     id: '1',
     title: 'Lenovo IdeaPad L3',
     description:
       'Powerful laptop with FHD display, stereo speakers, and long battery life. Ideal for work, school, and entertainment.',
-    price: 930.85,
+    price: 930,
   },
   {
     id: '2',
@@ -27,7 +27,7 @@ const productData: IProduct[] = [
     title: 'Iiyama ProLite',
     description:
       'Stylish edge-to-edge monitor with IPS panel, 4K resolution, and adjustable stand for optimal viewing experience.',
-    price: 697.6,
+    price: 697,
   },
   {
     id: '5',
@@ -62,7 +62,7 @@ const productData: IProduct[] = [
     title: 'Apple iPhone 14',
     description:
       'Durable iPhone 14 with aerospace-grade aluminum body, Ceramic Shield display, and A15 Bionic processor for superior performance.',
-    price: 1087.5,
+    price: 1087,
   },
   {
     id: '10',
@@ -90,22 +90,38 @@ const productData: IProduct[] = [
     title: 'Xiaomi Redmi Watch 2',
     description:
       'Xiaomi Redmi Watch 2 with 100+ workout modes, multiple watch faces, and trendy design for fitness enthusiasts.',
-    price: 70.65,
+    price: 70,
   },
   {
     id: '14',
     title: 'Huawei MatePad Pro',
     description:
       'Huawei MatePad Pro with nature-inspired color design, compact and lightweight build, and hidden antenna for a sleek look.',
-    price: 707.8,
+    price: 707,
   },
   {
     id: '15',
     title: 'MSI Pro AP241',
     description:
       'MSI Pro AP241 All-in-One PC with powerful processing, ergonomic 23.8-inch screen, and anti-flicker technology for enhanced comfort.',
-    price: 1681.42,
+    price: 1681,
   },
 ];
 
-export default productData;
+export const stockData: IStock[] = [
+  { product_id: '1', count: 9 },
+  { product_id: '2', count: 14 },
+  { product_id: '3', count: 7 },
+  { product_id: '4', count: 1 },
+  { product_id: '5', count: 15 },
+  { product_id: '6', count: 8 },
+  { product_id: '7', count: 5 },
+  { product_id: '8', count: 12 },
+  { product_id: '9', count: 3 },
+  { product_id: '10', count: 18 },
+  { product_id: '11', count: 7 },
+  { product_id: '12', count: 22 },
+  { product_id: '13', count: 2 },
+  { product_id: '14', count: 6 },
+  { product_id: '15', count: 30 },
+];

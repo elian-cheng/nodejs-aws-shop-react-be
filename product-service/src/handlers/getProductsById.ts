@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { sendResponse } from '../utils/helpers';
-import productData from '../lib/data';
+import { productData } from '../lib/data';
 
 export const handler = async (
   event: APIGatewayProxyEvent

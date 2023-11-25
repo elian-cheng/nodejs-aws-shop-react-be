@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import productData from '../lib/data';
+import { productData } from '../lib/data';
 import { handler } from '../handlers/getProductsById';
 
 const createMockEvent = (
