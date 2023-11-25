@@ -6,7 +6,7 @@ import {
   BatchGetItemCommandOutput,
 } from '@aws-sdk/client-dynamodb';
 import { randomUUID } from 'node:crypto';
-import { ErrorMessages, Table } from '../utils/constants';
+import { ErrorMessages } from '../utils/constants';
 import {
   IAvailableProduct,
   IDBQueryOutput,
@@ -17,17 +17,19 @@ import {
 } from '../utils/interfaces';
 
 const dbClient = new DynamoDBClient();
+const productsTableName = process.env.PRODUCTS_TABLE_NAME ?? '';
+const stocksTableName = process.env.STOCKS_TABLE_NAME ?? '';
 
 export const getProductsList = async (): Promise<IAvailableProduct[]> => {
   const { Items: productItems } = (await dbClient.send(
     new ScanCommand({
-      TableName: Table.PRODUCTS,
+      TableName: productsTableName,
     })
   )) as IDBScanOutput<IProduct>;
 
   const { Items: stockItems } = (await dbClient.send(
     new ScanCommand({
-      TableName: Table.STOCKS,
+      TableName: stocksTableName,
     })
   )) as IDBQueryOutput<IStock>;
 
@@ -51,18 +53,18 @@ export const getProductById = async (
   const { Responses } = (await dbClient.send(
     new BatchGetItemCommand({
       RequestItems: {
-        [Table.PRODUCTS]: {
+        [productsTableName]: {
           Keys: [{ id: { S: id } }],
         },
-        [Table.STOCKS]: {
+        [stocksTableName]: {
           Keys: [{ product_id: { S: id } }],
         },
       },
     })
   )) as BatchGetItemCommandOutput;
 
-  const productResponse = Responses?.[Table.PRODUCTS]?.[0];
-  const stockResponse = Responses?.[Table.STOCKS]?.[0];
+  const productResponse = Responses?.[productsTableName]?.[0];
+  const stockResponse = Responses?.[stocksTableName]?.[0];
 
   if (!productResponse) {
     throw new Error(ErrorMessages.PRODUCT_NOT_FOUND);
@@ -100,7 +102,7 @@ export const createProduct = async (
       TransactItems: [
         {
           Put: {
-            TableName: Table.PRODUCTS,
+            TableName: productsTableName,
             Item: {
               id: { S: newProductId },
               title: { S: product.title },
@@ -111,7 +113,7 @@ export const createProduct = async (
         },
         {
           Put: {
-            TableName: Table.STOCKS,
+            TableName: stocksTableName,
             Item: {
               product_id: { S: newProductId },
               count: { N: product.count.toString() },

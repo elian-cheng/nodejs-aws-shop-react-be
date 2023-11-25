@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { handler } from '../handlers/getProductsList';
-import { IProduct } from '../schemas/product';
+import { IProduct } from '../utils/interfaces';
 
 export const checkRequiredParameters = (
   requiredParams: string[],

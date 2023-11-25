@@ -6,6 +6,7 @@ import {
   NodejsFunction,
   NodejsFunctionProps,
 } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 
 const API_NAME = 'products';
 const API_PATH = `/${API_NAME}`;
@@ -15,10 +16,15 @@ const stack = new cdk.Stack(app, 'ElianRssProductServiceStack', {
   env: { region: 'eu-north-1' },
 });
 
+const productsTable = TableV2.fromTableName(stack, 'ProductTable', 'products');
+const stocksTable = TableV2.fromTableName(stack, 'StocksTable', 'stocks');
+
 const sharedLambdaProps: Partial<NodejsFunctionProps> = {
   runtime: lambda.Runtime.NODEJS_18_X,
   environment: {
     PRODUCT_AWS_REGION: 'eu-north-1',
+    PRODUCTS_TABLE_NAME: productsTable.tableName,
+    STOCKS_TABLE_NAME: stocksTable.tableName,
   },
 };
 
@@ -33,6 +39,21 @@ const getProductsById = new NodejsFunction(stack, 'GetProductsByIdLambda', {
   functionName: 'getProductsById',
   entry: 'src/handlers/getProductsById.ts',
 });
+
+const createProduct = new NodejsFunction(stack, 'CreateProductLambda', {
+  ...sharedLambdaProps,
+  functionName: 'createProduct',
+  entry: 'src/handlers/createProduct.ts',
+});
+
+productsTable.grantReadData(getProductsList);
+stocksTable.grantReadData(getProductsList);
+
+productsTable.grantReadData(getProductsById);
+stocksTable.grantReadData(getProductsById);
+
+productsTable.grantWriteData(createProduct);
+stocksTable.grantWriteData(createProduct);
 
 const api = new apiGateway.HttpApi(stack, 'ProductApi', {
   corsPreflight: {
@@ -58,6 +79,15 @@ api.addRoutes({
   integration: new HttpLambdaIntegration(
     'GetProductsByIdIntegration',
     getProductsById
+  ),
+});
+
+api.addRoutes({
+  path: API_PATH,
+  methods: [apiGateway.HttpMethod.POST],
+  integration: new HttpLambdaIntegration(
+    'CreateProductLambdaIntegration',
+    createProduct
   ),
 });
 
