@@ -1,4 +1,4 @@
-import { IProduct, IStock } from '../schemas/product';
+import { IProduct, IStock } from '../utils/interfaces';
 
 export const productData: IProduct[] = [
   {
