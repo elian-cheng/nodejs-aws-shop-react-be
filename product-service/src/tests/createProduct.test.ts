@@ -1,4 +1,7 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
+import {
+  APIGatewayEventRequestContext,
+  APIGatewayProxyEvent,
+} from 'aws-lambda';
 import { handler } from '../handlers/createProduct';
 import * as dbUtils from '../lib/dbUtils';
 import { StatusCodes } from '../utils/constants';
@@ -14,7 +17,7 @@ const createMockEvent = (body: unknown): APIGatewayProxyEvent => ({
   queryStringParameters: null,
   multiValueQueryStringParameters: null,
   stageVariables: null,
-  requestContext: {} as any,
+  requestContext: {} as APIGatewayEventRequestContext,
   resource: 'mock-resource',
 });
 

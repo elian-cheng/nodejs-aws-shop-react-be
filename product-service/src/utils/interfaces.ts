@@ -1,8 +1,4 @@
-import {
-  PutItemCommandOutput,
-  QueryCommandOutput,
-  ScanCommandOutput,
-} from '@aws-sdk/client-dynamodb';
+import { PutItemCommandOutput } from '@aws-sdk/client-dynamodb';
 
 export interface IProduct {
   id: string;
