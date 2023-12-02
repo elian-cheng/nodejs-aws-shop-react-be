@@ -33,7 +33,7 @@ export const handler = async (
     const url = await getS3UploadUrl({ bucketName, objectKey });
 
     console.log('Generated S3 upload URL:', url);
-    return sendResponse(StatusCodes.OK, { url });
+    return sendResponse(StatusCodes.OK, url);
   } catch (err: unknown) {
     const error = err as Error;
     console.error('An error occurred:', error.message);

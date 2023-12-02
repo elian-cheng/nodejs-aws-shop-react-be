@@ -1,10 +1,11 @@
-import { S3Event } from 'aws-lambda';
-import { readCSVFileStream } from '../utils/helpers';
-import { ImportFolders } from '../utils/constants';
+import { APIGatewayProxyResult, S3Event } from 'aws-lambda';
+import { readCSVFileStream, sendResponse } from '../utils/helpers';
+import { ImportFolders, StatusCodes } from '../utils/constants';
 import { getS3ReadStream } from '../utils/s3helpers';
-import fileType from 'file-type';
 
-export const handler = async (event: S3Event): Promise<void> => {
+export const handler = async (
+  event: S3Event
+): Promise<APIGatewayProxyResult | void> => {
   try {
     console.log('ImportFileParser event:', JSON.stringify(event));
 
@@ -28,12 +29,18 @@ export const handler = async (event: S3Event): Promise<void> => {
       return;
     }
 
-    await readCSVFileStream(
-      rawStream,
-      bucket,
-      fileName,
-      fileName.replace(ImportFolders.UPLOADED, ImportFolders.PARSED)
-    );
+    try {
+      await readCSVFileStream(
+        rawStream,
+        bucket,
+        fileName,
+        fileName.replace(ImportFolders.UPLOADED, ImportFolders.PARSED)
+      );
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('Validation error:', error.message);
+      return sendResponse(StatusCodes.BAD_REQUEST, { message: error.message });
+    }
 
     console.log('Processing complete:', fileName);
   } catch (err: unknown) {

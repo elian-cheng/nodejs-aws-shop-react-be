@@ -2,11 +2,14 @@
 
 Back-end for nodejs-aws-shop-react repo
 
-[Documentation](./product-service/doc/api.yaml)
+[Product Documentation](./product-service/doc/api.yaml)
+[Import Documentation](./import-service/doc/api.yaml)
+[Products CSV file](./import-service/src/lib/products.csv)
 
 ## Deploy link
 
 - Product Service URL: https://d0jroimskb.execute-api.eu-north-1.amazonaws.com/products
+- Import Service URL: https://m6el93alk8.execute-api.eu-north-1.amazonaws.com/import
 
 ## Front-end:
 

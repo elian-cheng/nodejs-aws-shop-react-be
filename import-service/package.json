@@ -54,7 +54,6 @@
     "@aws-sdk/client-s3": "^3.465.0",
     "@aws-sdk/s3-request-presigner": "^3.465.0",
     "csv-parser": "^3.0.0",
-    "file-type": "^18.7.0",
     "joi": "^17.11.0"
   }
 }
