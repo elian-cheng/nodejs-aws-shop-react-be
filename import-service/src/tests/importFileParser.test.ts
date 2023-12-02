@@ -1,89 +1,106 @@
-import {
-  APIGatewayEventRequestContext,
-  APIGatewayProxyEvent,
-} from 'aws-lambda';
 import { handler } from '../handlers/importFileParser';
-import { StatusCodes } from '../utils/constants';
+import { S3Event } from 'aws-lambda';
+import { Readable } from 'stream';
 
-const createMockEvent = (body: unknown): APIGatewayProxyEvent => ({
-  pathParameters: null,
-  body: JSON.stringify(body),
-  headers: {},
-  multiValueHeaders: {},
-  httpMethod: 'POST',
-  isBase64Encoded: false,
-  path: '/products',
-  queryStringParameters: null,
-  multiValueQueryStringParameters: null,
-  stageVariables: null,
-  requestContext: {} as APIGatewayEventRequestContext,
-  resource: 'mock-resource',
-});
+import * as helpers from '../utils/helpers';
+import * as s3helpers from '../utils/s3helpers';
 
-describe('createProduct', () => {
-  let createProductSpy: jest.SpyInstance;
+const mockSuccessEvent: S3Event = {
+  Records: [
+    {
+      eventVersion: '2.1',
+      eventSource: 'aws:s3',
+      awsRegion: 'mock-region',
+      eventTime: '',
+      eventName: 'ObjectCreated:Put',
+      userIdentity: { principalId: '' },
+      requestParameters: { sourceIPAddress: '' },
+      responseElements: { 'x-amz-request-id': '', 'x-amz-id-2': '' },
+      s3: {
+        s3SchemaVersion: '1.0',
+        configurationId: 'mock-config-id',
+        bucket: {
+          name: 'mock-bucket',
+          ownerIdentity: { principalId: '' },
+          arn: '',
+        },
+        object: {
+          key: 'uploaded/test.csv',
+          size: 1,
+          eTag: '',
+          sequencer: '',
+        },
+      },
+    },
+  ],
+};
 
-  beforeEach(() => {});
+const mockStream = new Readable();
+
+jest.mock('../utils/helpers');
+jest.mock('../utils/s3helpers');
+
+describe('ImportFileParser Lambda', () => {
+  let spyOnReadCSVFileStream: jest.SpyInstance;
+  let spyOnGetS3ReadStream: jest.SpyInstance;
+
+  beforeAll(() => {
+    spyOnReadCSVFileStream = jest.spyOn(helpers, 'readCSVFileStream');
+    spyOnGetS3ReadStream = jest.spyOn(s3helpers, 'getS3ReadStream');
+  });
 
   afterEach(() => {
-    createProductSpy.mockClear();
+    jest.clearAllMocks();
   });
 
-  afterAll(() => {
-    createProductSpy.mockRestore();
+  it('should successfully process the S3 object and call readCSVFileStream', async () => {
+    spyOnGetS3ReadStream.mockResolvedValue(mockStream);
+    spyOnReadCSVFileStream.mockResolvedValue(true);
+
+    await handler(mockSuccessEvent);
+
+    expect(spyOnReadCSVFileStream).toHaveBeenCalledTimes(1);
+    expect(spyOnGetS3ReadStream).toHaveBeenCalledTimes(1);
   });
 
-  it('should create a product with a valid body', async () => {
-    const mockProduct = {
-      id: 'mockProductId',
-      title: 'Mock title',
-      description: 'Mock description',
-      price: 10,
-      count: 1,
-    };
+  it('should handle a failure in getS3ReadStream', async () => {
+    spyOnGetS3ReadStream.mockRejectedValue(
+      new Error('Failed to get S3 stream')
+    );
 
-    createProductSpy.mockResolvedValueOnce(mockProduct);
+    try {
+      await handler(mockSuccessEvent);
+    } catch (err: unknown) {
+      const error = err as Error;
+      expect(error.message).toBe('Failed to get S3 stream');
+    }
 
-    const mockEvent = createMockEvent({
-      description: 'Mock description',
-      price: 10,
-      title: 'Mock title',
-      count: 1,
-    });
-
-    const response = await handler(mockEvent);
-
-    expect(response.statusCode).toBe(StatusCodes.CREATED);
-    expect(createProductSpy).toHaveBeenCalled();
-
-    const responseBody = JSON.parse(response.body);
-    expect(responseBody).toEqual(mockProduct);
+    expect(spyOnReadCSVFileStream).not.toHaveBeenCalled();
+    expect(spyOnGetS3ReadStream).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 400 error with an invalid body', async () => {
-    const mockEvent = createMockEvent({
-      description: 'Mock description 2',
-    });
+  it('should handle a failure in readCSVFileStream', async () => {
+    spyOnGetS3ReadStream.mockResolvedValue(mockStream);
+    spyOnReadCSVFileStream.mockRejectedValue(
+      new Error('Failed to read CSV file')
+    );
 
-    const response = await handler(mockEvent);
+    try {
+      await handler(mockSuccessEvent);
+    } catch (err: unknown) {
+      const error = err as Error;
+      expect(error.message).toBe('Failed to read CSV file');
+    }
 
-    expect(response.statusCode).toBe(StatusCodes.BAD_REQUEST);
-    expect(createProductSpy).not.toHaveBeenCalled();
+    expect(spyOnReadCSVFileStream).toHaveBeenCalledTimes(1);
+    expect(spyOnGetS3ReadStream).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 500 error if an unexpected error occurs during product creation', async () => {
-    createProductSpy.mockRejectedValueOnce(new Error('Unexpected error'));
+  it('should handle an invalid S3 event format', async () => {
+    const invalidEvent = { Records: [] };
+    await expect(handler(invalidEvent)).resolves.toBeUndefined();
 
-    const mockEvent = createMockEvent({
-      description: 'Mock description',
-      price: 1,
-      title: 'Mock title',
-      count: 1,
-    });
-
-    const response = await handler(mockEvent);
-
-    expect(response.statusCode).toBe(StatusCodes.INTERNAL_ERROR);
-    expect(createProductSpy).toHaveBeenCalled();
+    expect(spyOnReadCSVFileStream).not.toHaveBeenCalled();
+    expect(spyOnGetS3ReadStream).not.toHaveBeenCalled();
   });
 });

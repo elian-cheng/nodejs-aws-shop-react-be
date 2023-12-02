@@ -1,120 +1,111 @@
+import { handler } from '../handlers/importProductsFile';
 import {
   APIGatewayEventRequestContext,
   APIGatewayProxyEvent,
 } from 'aws-lambda';
-import { handler } from '../handlers/importProductsFile';
-import { IAvailableProduct } from '../utils/interfaces';
 
-const createMockEvent = (): APIGatewayProxyEvent => ({
-  pathParameters: {},
-  body: '',
+import * as helpers from '../utils/helpers';
+import * as s3helpers from '../utils/s3helpers';
+import { StatusCodes } from '../utils/constants';
+
+const mockValidEvent: APIGatewayProxyEvent = {
+  path: '/import',
+  pathParameters: null,
+  body: null,
   headers: {},
   multiValueHeaders: {},
   httpMethod: 'GET',
+  queryStringParameters: { name: 'test.csv' },
+  multiValueQueryStringParameters: null,
+  requestContext: {} as APIGatewayEventRequestContext,
+  stageVariables: null,
   isBase64Encoded: false,
-  path: '/products',
+  resource: 'mock-resource',
+};
+
+const mockInvalidExtensionEvent: APIGatewayProxyEvent = {
+  path: '/import',
+  pathParameters: null,
+  body: null,
+  headers: {},
+  multiValueHeaders: {},
+  httpMethod: 'GET',
+  queryStringParameters: { name: 'test.xlsx' },
+  multiValueQueryStringParameters: null,
+  requestContext: {} as APIGatewayEventRequestContext,
+  stageVariables: null,
+  isBase64Encoded: false,
+  resource: 'mock-resource',
+};
+
+const mockMissingFileNameEvent: APIGatewayProxyEvent = {
+  path: '/import',
+  pathParameters: null,
+  body: null,
+  headers: {},
+  multiValueHeaders: {},
+  httpMethod: 'GET',
   queryStringParameters: null,
   multiValueQueryStringParameters: null,
-  stageVariables: null,
   requestContext: {} as APIGatewayEventRequestContext,
+  stageVariables: null,
+  isBase64Encoded: false,
   resource: 'mock-resource',
-});
+};
 
-describe('getProductsList', () => {
-  let getProductsListSpy: jest.SpyInstance;
+jest.mock('../utils/s3helpers');
 
-  beforeEach(() => {});
+describe('ImportProducts Lambda', () => {
+  let spyOnBuildResponse: jest.SpyInstance;
+  let spyOnGetS3UploadUrl: jest.SpyInstance;
+
+  beforeAll(() => {
+    spyOnBuildResponse = jest.spyOn(helpers, 'sendResponse');
+    spyOnGetS3UploadUrl = jest.spyOn(s3helpers, 'getS3UploadUrl');
+  });
 
   afterEach(() => {
-    getProductsListSpy.mockClear();
+    jest.clearAllMocks();
   });
 
-  afterAll(() => {
-    getProductsListSpy.mockRestore();
+  it('successfully returns presigned URL when provided with a valid CSV file name', async () => {
+    spyOnGetS3UploadUrl.mockResolvedValue('https://test-url');
+
+    const res = await handler(mockValidEvent);
+
+    expect(res.statusCode).toEqual(StatusCodes.OK);
+    expect(res.body).toContain('https://test-url');
+    expect(spyOnGetS3UploadUrl).toHaveBeenCalledTimes(1);
+    expect(spyOnBuildResponse).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 200 and products with count when both products and stocks are found', async () => {
-    const mockedProductItems: IAvailableProduct[] = [
-      {
-        id: '1',
-        title: 'Product 1',
-        description: 'Description 1',
-        price: 10,
-        count: 5,
-      },
-      {
-        id: '2',
-        title: 'Product 2',
-        description: 'Description 2',
-        price: 20,
-        count: 10,
-      },
-    ];
+  it('returns error and status 400 when not provided with CSV file name', async () => {
+    const res = await handler(mockMissingFileNameEvent);
 
-    getProductsListSpy.mockResolvedValueOnce(mockedProductItems);
-
-    const mockEvent: APIGatewayProxyEvent = createMockEvent();
-
-    const response = await handler(mockEvent);
-
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual(JSON.stringify(mockedProductItems));
-    expect(getProductsListSpy).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    expect(res.body).toContain('required');
+    expect(spyOnGetS3UploadUrl).not.toHaveBeenCalled();
+    expect(spyOnBuildResponse).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 200 and empty list when no products are found', async () => {
-    getProductsListSpy.mockResolvedValueOnce([]);
+  it('returns error and status 400 when provided with invalid CSV file name', async () => {
+    const res = await handler(mockInvalidExtensionEvent);
 
-    const mockEvent: APIGatewayProxyEvent = createMockEvent();
-
-    const response = await handler(mockEvent);
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual(JSON.stringify([]));
-    expect(getProductsListSpy).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    expect(res.body).toContain('Only CSV files are allowed');
+    expect(spyOnGetS3UploadUrl).not.toHaveBeenCalled();
+    expect(spyOnBuildResponse).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 200 and products with count: 0 when no stocks are found', async () => {
-    const mockedProductItems = [
-      { id: '1', title: 'Product 1', description: 'Description 1', price: 10 },
-      { id: '2', title: 'Product 2', description: 'Description 2', price: 20 },
-    ];
-
-    getProductsListSpy.mockResolvedValueOnce(
-      mockedProductItems.map((product) => ({
-        ...product,
-        count: 0,
-      }))
+  it('successfully handles S3 errors', async () => {
+    spyOnGetS3UploadUrl.mockRejectedValueOnce(
+      new Error('Internal server error')
     );
 
-    const mockEvent: APIGatewayProxyEvent = createMockEvent();
+    const res = await handler(mockValidEvent);
 
-    const response = await handler(mockEvent);
-
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual(
-      JSON.stringify(
-        mockedProductItems.map((product) => ({
-          ...product,
-          count: 0,
-        }))
-      )
-    );
-    expect(getProductsListSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('should return 500 error if an unexpected error occurs during query', async () => {
-    getProductsListSpy.mockRejectedValueOnce(new Error('Unexpected error'));
-
-    const mockEvent: APIGatewayProxyEvent = createMockEvent();
-
-    const response = await handler(mockEvent);
-
-    expect(response.statusCode).toBe(500);
-    expect(response.body).toEqual(
-      JSON.stringify({
-        message: 'Internal server error',
-      })
-    );
-    expect(getProductsListSpy).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toEqual(StatusCodes.INTERNAL_ERROR);
+    expect(res.body).toContain('Internal server error');
+    expect(spyOnBuildResponse).toHaveBeenCalledTimes(1);
   });
 });
