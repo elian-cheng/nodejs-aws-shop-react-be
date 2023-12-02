@@ -1,24 +1,23 @@
-import { PutItemCommandOutput } from '@aws-sdk/client-dynamodb';
-
-export interface IProduct {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
+export interface IUnknownObj<T = unknown> {
+  [key: string]: T;
+}
+export interface IS3UploadParams {
+  bucketName: string;
+  objectKey: string;
+  metadata?: IUnknownObj<string>;
 }
 
-export interface IStock {
-  product_id: string;
-  count: number;
+export interface IS3ReadStreamParams {
+  bucket: string;
+  fileName: string;
 }
 
-export interface IAvailableProduct extends IProduct {
-  count: number;
+export interface IS3MoveObjParams {
+  bucket: string;
+  from: string;
+  to: string;
 }
 
-export interface IProductInput extends Omit<IAvailableProduct, 'id'> {}
-
-export interface IDBPutOutput<T>
-  extends Omit<PutItemCommandOutput, 'Attributes'> {
-  Attributes?: T;
+export interface ICsvRow {
+  [key: string]: string | number | boolean;
 }

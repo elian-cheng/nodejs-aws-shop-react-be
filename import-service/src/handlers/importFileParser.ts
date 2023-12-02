@@ -1,31 +1,42 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { sendResponse } from '../utils/helpers';
-import ImportUrl from '../schemas/import';
-import { ErrorMessages, StatusCodes } from '../utils/constants';
+import { S3Event } from 'aws-lambda';
+import { readCSVFileStream } from '../utils/helpers';
+import { ImportFolders } from '../utils/constants';
+import { getS3ReadStream } from '../utils/s3helpers';
 
-export const handler = async (
-  event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
-  console.log(`lambda: createProduct, event: ${JSON.stringify(event)}`);
-
+export const handler = async (event: S3Event): Promise<void> => {
   try {
-    const body = JSON.parse(event.body || '{}');
-    const { value, error } = ImportUrl.validate(body, {
-      abortEarly: false,
-    });
+    console.log('Received S3 event:', JSON.stringify(event));
 
-    if (error) {
-      return sendResponse(StatusCodes.BAD_REQUEST, {
-        message: ErrorMessages.PRODUCT_CREATE_ERROR,
-      });
+    if (!event.Records || event.Records.length === 0) {
+      console.error('Invalid S3 event format. Missing Records array.');
+      return;
     }
 
-    const createdProduct = {};
+    const bucket = event.Records[0].s3.bucket.name;
+    const fileName = decodeURIComponent(
+      event.Records[0].s3.object.key.replace(/\+/g, ' ')
+    );
 
-    return sendResponse(StatusCodes.CREATED, createdProduct);
-  } catch (e) {
-    return sendResponse(StatusCodes.INTERNAL_ERROR, {
-      message: ErrorMessages.INTERNAL_SERVER_ERROR,
+    const rawStream = await getS3ReadStream({
+      bucket,
+      fileName,
     });
+
+    if (!rawStream) {
+      console.error('Failed to retrieve S3 stream for', fileName);
+      return;
+    }
+
+    await readCSVFileStream(
+      rawStream,
+      bucket,
+      fileName,
+      fileName.replace(ImportFolders.UPLOADED, ImportFolders.PARSED)
+    );
+
+    console.log('Processing complete:', fileName);
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error('An error occurred:', error.message);
   }
 };

@@ -17,3 +17,11 @@ export enum ErrorMessages {
   PRODUCT_CREATE_ERROR = 'Product data is absent or incorrect',
   INTERNAL_SERVER_ERROR = 'Internal server error',
 }
+
+export enum ImportFolders {
+  UPLOADED = 'uploaded/',
+  PARSED = 'parsed/',
+}
+
+export const URL_EXPIRATION_TIME_SECONDS = 15 * 60;
+export const REGION = 'eu-north-1';
