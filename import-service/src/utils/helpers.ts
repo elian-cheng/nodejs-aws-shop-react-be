@@ -3,6 +3,7 @@ import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { ICsvRow } from './interfaces';
 import { moveS3Object } from './s3helpers';
+import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
 
 export const sendResponse = (
   statusCode: number = StatusCodes.OK,

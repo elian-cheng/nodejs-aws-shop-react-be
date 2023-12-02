@@ -2,6 +2,7 @@ import { S3Event } from 'aws-lambda';
 import { readCSVFileStream } from '../utils/helpers';
 import { ImportFolders } from '../utils/constants';
 import { getS3ReadStream } from '../utils/s3helpers';
+import fileType from 'file-type';
 
 export const handler = async (event: S3Event): Promise<void> => {
   try {
