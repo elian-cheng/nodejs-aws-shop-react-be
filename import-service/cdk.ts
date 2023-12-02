@@ -2,60 +2,79 @@ import * as cdk from 'aws-cdk-lib';
 import * as apiGateway from '@aws-cdk/aws-apigatewayv2-alpha';
 import { HttpLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3notifications from 'aws-cdk-lib/aws-s3-notifications';
 import {
   NodejsFunction,
   NodejsFunctionProps,
 } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { TableV2 } from 'aws-cdk-lib/aws-dynamodb';
+import { REGION } from './src/utils/constants';
 
-const API_NAME = 'products';
+const API_NAME = 'import';
 const API_PATH = `/${API_NAME}`;
 
 const app = new cdk.App();
-const stack = new cdk.Stack(app, 'ElianRssProductServiceStack', {
-  env: { region: 'eu-north-1' },
+const stack = new cdk.Stack(app, 'ElianRssImportServiceStack', {
+  env: { region: REGION },
 });
 
-const productsTable = TableV2.fromTableName(stack, 'ProductTable', 'products');
-const stocksTable = TableV2.fromTableName(stack, 'StocksTable', 'stocks');
+const bucket = new s3.Bucket(stack, 'ElianRssImportBucket', {
+  bucketName: 'elian-rss-import-bucket',
+  autoDeleteObjects: true,
+  cors: [
+    {
+      allowedHeaders: ['*'],
+      allowedMethods: [
+        s3.HttpMethods.PUT,
+        s3.HttpMethods.POST,
+        s3.HttpMethods.GET,
+        s3.HttpMethods.DELETE,
+        s3.HttpMethods.HEAD,
+      ],
+      allowedOrigins: ['*'],
+    },
+  ],
+  blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+  removalPolicy: cdk.RemovalPolicy.DESTROY,
+});
 
 const sharedLambdaProps: Partial<NodejsFunctionProps> = {
   runtime: lambda.Runtime.NODEJS_18_X,
   environment: {
-    PRODUCT_AWS_REGION: 'eu-north-1',
-    PRODUCTS_TABLE_NAME: productsTable.tableName,
-    STOCKS_TABLE_NAME: stocksTable.tableName,
+    PRODUCT_AWS_REGION: REGION,
+    IMPORT_BUCKET_NAME: bucket.bucketName,
   },
 };
 
-const getProductsList = new NodejsFunction(stack, 'GetProductsListLambda', {
+const importFileParser = new NodejsFunction(stack, 'ImportFileParserLambda', {
   ...sharedLambdaProps,
-  functionName: 'getProductsList',
-  entry: 'src/handlers/getProductsList.ts',
+  functionName: 'importFileParser',
+  entry: 'src/handlers/importFileParser.ts',
 });
 
-const getProductsById = new NodejsFunction(stack, 'GetProductsByIdLambda', {
-  ...sharedLambdaProps,
-  functionName: 'getProductsById',
-  entry: 'src/handlers/getProductsById.ts',
-});
+const importProductsFile = new NodejsFunction(
+  stack,
+  'ImportProductsFileLambda',
+  {
+    ...sharedLambdaProps,
+    functionName: 'importProductsFile',
+    entry: 'src/handlers/importProductsFile.ts',
+  }
+);
 
-const createProduct = new NodejsFunction(stack, 'CreateProductLambda', {
-  ...sharedLambdaProps,
-  functionName: 'createProduct',
-  entry: 'src/handlers/createProduct.ts',
-});
+bucket.addEventNotification(
+  s3.EventType.OBJECT_CREATED,
+  new s3notifications.LambdaDestination(importFileParser),
+  {
+    prefix: 'uploaded',
+  }
+);
 
-productsTable.grantReadData(getProductsList);
-stocksTable.grantReadData(getProductsList);
+bucket.grantReadWrite(importProductsFile);
+bucket.grantReadWrite(importFileParser);
+bucket.grantDelete(importFileParser);
 
-productsTable.grantReadData(getProductsById);
-stocksTable.grantReadData(getProductsById);
-
-productsTable.grantWriteData(createProduct);
-stocksTable.grantWriteData(createProduct);
-
-const api = new apiGateway.HttpApi(stack, 'ProductApi', {
+const api = new apiGateway.HttpApi(stack, 'ImportApi', {
   corsPreflight: {
     allowHeaders: ['*'],
     allowMethods: [apiGateway.CorsHttpMethod.ANY],
@@ -67,27 +86,8 @@ api.addRoutes({
   path: API_PATH,
   methods: [apiGateway.HttpMethod.GET],
   integration: new HttpLambdaIntegration(
-    'GetProductsListLambdaIntegration',
-    getProductsList
-  ),
-});
-
-api.addRoutes({
-  path: `${API_PATH}/{productId}`,
-  methods: [apiGateway.HttpMethod.GET],
-
-  integration: new HttpLambdaIntegration(
-    'GetProductsByIdIntegration',
-    getProductsById
-  ),
-});
-
-api.addRoutes({
-  path: API_PATH,
-  methods: [apiGateway.HttpMethod.POST],
-  integration: new HttpLambdaIntegration(
-    'CreateProductLambdaIntegration',
-    createProduct
+    'ImportProductsFileLambdaIntegration',
+    importProductsFile
   ),
 });
 

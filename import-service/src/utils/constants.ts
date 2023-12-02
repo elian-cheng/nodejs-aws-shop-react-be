@@ -1,8 +1,3 @@
-export enum Table {
-  PRODUCTS = 'products',
-  STOCKS = 'stocks',
-}
-
 export enum StatusCodes {
   OK = 200,
   CREATED = 201,

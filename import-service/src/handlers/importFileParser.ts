@@ -5,7 +5,7 @@ import { getS3ReadStream } from '../utils/s3helpers';
 
 export const handler = async (event: S3Event): Promise<void> => {
   try {
-    console.log('Received S3 event:', JSON.stringify(event));
+    console.log('ImportFileParser event:', JSON.stringify(event));
 
     if (!event.Records || event.Records.length === 0) {
       console.error('Invalid S3 event format. Missing Records array.');
