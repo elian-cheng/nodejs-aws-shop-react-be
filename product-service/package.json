@@ -52,6 +52,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@aws-sdk/client-sns": "^3.470.0",
     "joi": "^17.11.0"
   }
 }

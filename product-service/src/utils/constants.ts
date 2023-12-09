@@ -1,6 +1,14 @@
+export const MAIN_EMAIL = 'chernega.o@gmail.com';
+export const REGION = 'eu-north-1';
+
 export enum Table {
   PRODUCTS = 'products',
   STOCKS = 'stocks',
+}
+
+export enum ProductNotification {
+  SUCCESS = 'New product added to Elian Rss catalog',
+  ERROR = 'An error occurred adding a new product to Elian Rss catalog',
 }
 
 export enum StatusCodes {
