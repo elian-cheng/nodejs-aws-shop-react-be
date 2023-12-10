@@ -10,7 +10,12 @@ import {
   NodejsFunctionProps,
 } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { TableV2 } from 'aws-cdk-lib/aws-dynamodb';
-import { REGION } from './src/utils/constants';
+import {
+  PRIMARY_EMAIL,
+  SECONDARY_EMAIL,
+  FILTER_COUNT,
+  REGION,
+} from './src/utils/constants';
 
 const API_NAME = 'products';
 const API_PATH = `/${API_NAME}`;
@@ -42,13 +47,24 @@ const createProductTopic = new sns.Topic(stack, 'CreateProductTopic', {
   topicName: 'create-product-topic',
 });
 
-new sns.Subscription(stack, 'ElianRssMainEmailSubscription', {
-  endpoint: process.env.MAIN_EMAIL || '',
+new sns.Subscription(stack, 'ElianRssPrimaryEmailSubscription', {
+  endpoint: PRIMARY_EMAIL,
   protocol: sns.SubscriptionProtocol.EMAIL,
   topic: createProductTopic,
   filterPolicy: {
     count: sns.SubscriptionFilter.numericFilter({
-      between: { start: 1, stop: 10 },
+      lessThan: FILTER_COUNT,
+    }),
+  },
+});
+
+new sns.Subscription(stack, 'ElianRssSecondaryEmailSubscription', {
+  endpoint: SECONDARY_EMAIL,
+  protocol: sns.SubscriptionProtocol.EMAIL,
+  topic: createProductTopic,
+  filterPolicy: {
+    count: sns.SubscriptionFilter.numericFilter({
+      greaterThanOrEqualTo: FILTER_COUNT,
     }),
   },
 });

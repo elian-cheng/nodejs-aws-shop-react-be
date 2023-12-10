@@ -1,4 +1,6 @@
-export const MAIN_EMAIL = 'chernega.o@gmail.com';
+export const PRIMARY_EMAIL = 'chernega.o@gmail.com';
+export const SECONDARY_EMAIL = 'eliang.cheng@gmail.com';
+export const FILTER_COUNT = 5;
 export const REGION = 'eu-north-1';
 
 export enum Table {
