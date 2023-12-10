@@ -109,6 +109,13 @@ const catalogBatchProcess = new NodejsFunction(
     entry: 'src/handlers/catalogBatchProcess.ts',
   }
 );
+createProductTopic.grantPublish(catalogBatchProcess);
+
+catalogBatchProcess.addEventSource(
+  new SqsEventSource(catalogProductsQueue, {
+    batchSize: 5,
+  })
+);
 
 productsTable.grantReadData(getProductsList);
 stocksTable.grantReadData(getProductsList);
@@ -119,13 +126,8 @@ stocksTable.grantReadData(getProductsById);
 productsTable.grantWriteData(createProduct);
 stocksTable.grantWriteData(createProduct);
 
-createProductTopic.grantPublish(catalogBatchProcess);
-
-catalogBatchProcess.addEventSource(
-  new SqsEventSource(catalogProductsQueue, {
-    batchSize: 5,
-  })
-);
+productsTable.grantWriteData(catalogBatchProcess);
+stocksTable.grantWriteData(catalogBatchProcess);
 
 const api = new apiGateway.HttpApi(stack, 'ProductApi', {
   corsPreflight: {

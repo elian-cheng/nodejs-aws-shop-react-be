@@ -4,11 +4,13 @@ import { HttpLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-al
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3notifications from 'aws-cdk-lib/aws-s3-notifications';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 import {
   NodejsFunction,
   NodejsFunctionProps,
 } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { REGION } from './src/utils/constants';
+import 'dotenv/config';
 
 const API_NAME = 'import';
 const API_PATH = `/${API_NAME}`;
@@ -17,6 +19,12 @@ const app = new cdk.App();
 const stack = new cdk.Stack(app, 'ElianRssImportServiceStack', {
   env: { region: REGION },
 });
+
+const productQueue = sqs.Queue.fromQueueArn(
+  stack,
+  'ElianRssProductQueue',
+  process.env.CREATE_PRODUCT_QUEUE_ARN!
+);
 
 const bucket = new s3.Bucket(stack, 'ElianRssImportBucket', {
   bucketName: 'elian-rss-import-bucket',
@@ -43,6 +51,7 @@ const sharedLambdaProps: Partial<NodejsFunctionProps> = {
   environment: {
     PRODUCT_AWS_REGION: REGION,
     IMPORT_BUCKET_NAME: bucket.bucketName,
+    PRODUCT_QUEUE: productQueue.queueUrl,
   },
 };
 
@@ -62,6 +71,12 @@ const importProductsFile = new NodejsFunction(
   }
 );
 
+productQueue.grantSendMessages(importFileParser);
+
+bucket.grantReadWrite(importProductsFile);
+bucket.grantReadWrite(importFileParser);
+bucket.grantDelete(importFileParser);
+
 bucket.addEventNotification(
   s3.EventType.OBJECT_CREATED,
   new s3notifications.LambdaDestination(importFileParser),
@@ -69,10 +84,6 @@ bucket.addEventNotification(
     prefix: 'uploaded',
   }
 );
-
-bucket.grantReadWrite(importProductsFile);
-bucket.grantReadWrite(importFileParser);
-bucket.grantDelete(importFileParser);
 
 const api = new apiGateway.HttpApi(stack, 'ImportApi', {
   corsPreflight: {

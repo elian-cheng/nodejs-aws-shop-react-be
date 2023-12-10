@@ -1,4 +1,6 @@
+import { SQSRecord } from 'aws-lambda';
 import { StatusCodes } from './constants';
+import { IProduct, IStock } from './interfaces';
 
 export const sendResponse = (
   statusCode: number = StatusCodes.OK,
@@ -18,4 +20,23 @@ export const sendResponse = (
   };
 };
 
+export function transformRecords(record: SQSRecord): [IProduct, IStock] {
+  const { messageId: id } = record;
+  const payload = JSON.parse(record.body);
 
+  const { title = '', description = '', price = 0, count = 0 } = payload;
+
+  const product: IProduct = {
+    id,
+    title,
+    description,
+    price: +price,
+  };
+
+  const stock: IStock = {
+    product_id: id,
+    count: +count,
+  };
+
+  return [product, stock];
+}

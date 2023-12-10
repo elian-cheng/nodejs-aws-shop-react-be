@@ -38,7 +38,6 @@ describe('createProduct', () => {
 
   it('should create a product with a valid body', async () => {
     const mockProduct = {
-      id: 'mockProductId',
       title: 'Mock title',
       description: 'Mock description',
       price: 10,
@@ -60,7 +59,7 @@ describe('createProduct', () => {
     expect(createProductSpy).toHaveBeenCalled();
 
     const responseBody = JSON.parse(response.body);
-    expect(responseBody).toEqual(mockProduct);
+    expect(responseBody).toEqual({ ...mockProduct, id: expect.any(String) });
   });
 
   it('should return 400 error with an invalid body', async () => {

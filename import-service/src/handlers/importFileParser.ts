@@ -1,13 +1,13 @@
 import { APIGatewayProxyResult, S3Event } from 'aws-lambda';
-import { readCSVFileStream, sendResponse } from '../utils/helpers';
-import { ImportFolders, StatusCodes } from '../utils/constants';
+import { readCSVFileStream } from '../utils/helpers';
+import { ImportFolders } from '../utils/constants';
 import { getS3ReadStream } from '../utils/s3helpers';
 
 export const handler = async (
   event: S3Event
 ): Promise<APIGatewayProxyResult | void> => {
   try {
-    console.log('ImportFileParser event:', JSON.stringify(event));
+    console.log('ImportFileParser:', JSON.stringify(event));
 
     if (!event.Records || event.Records.length === 0) {
       console.error('Invalid S3 event format. Missing Records array.');
@@ -29,18 +29,12 @@ export const handler = async (
       return;
     }
 
-    try {
-      await readCSVFileStream(
-        rawStream,
-        bucket,
-        fileName,
-        fileName.replace(ImportFolders.UPLOADED, ImportFolders.PARSED)
-      );
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error('Validation error:', error.message);
-      return sendResponse(StatusCodes.BAD_REQUEST, { message: error.message });
-    }
+    await readCSVFileStream(
+      rawStream,
+      bucket,
+      fileName,
+      fileName.replace(ImportFolders.UPLOADED, ImportFolders.PARSED)
+    );
 
     console.log('Processing complete:', fileName);
   } catch (err: unknown) {

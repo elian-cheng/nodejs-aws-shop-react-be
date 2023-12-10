@@ -4,14 +4,8 @@ import {
   TransactWriteItemsCommand,
   QueryCommand,
 } from '@aws-sdk/client-dynamodb';
-import { randomUUID } from 'node:crypto';
-import {
-  IAvailableProduct,
-  IProduct,
-  IProductInput,
-  IStock,
-} from '../utils/interfaces';
-import { unmarshall } from '@aws-sdk/util-dynamodb';
+import { IAvailableProduct, IProduct, IStock } from '../utils/interfaces';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 
 const dbClient = new DynamoDBClient({
   region: 'eu-north-1',
@@ -68,40 +62,38 @@ export const getProductById = async (
   return res.Items?.[0] ? unmarshall(res.Items[0]) : null;
 };
 
-export const createProduct = async (
-  product: IProductInput
-): Promise<IAvailableProduct> => {
-  const newProductId: string = randomUUID();
+export async function createProduct(
+  product: IProduct,
+  stock: IStock,
+  productsTableName: string,
+  stocksTableName: string
+): Promise<IAvailableProduct> {
+  const transactItems = [
+    {
+      Put: {
+        TableName: productsTableName,
+        Item: marshall(product),
+      },
+    },
+    {
+      Put: {
+        TableName: stocksTableName,
+        Item: marshall(stock),
+      },
+    },
+  ];
 
-  await dbClient.send(
-    new TransactWriteItemsCommand({
-      TransactItems: [
-        {
-          Put: {
-            TableName: productsTableName,
-            Item: {
-              id: { S: newProductId },
-              title: { S: product.title },
-              description: { S: product.description },
-              price: { N: product.price.toString() },
-            },
-          },
-        },
-        {
-          Put: {
-            TableName: stocksTableName,
-            Item: {
-              product_id: { S: newProductId },
-              count: { N: product.count.toString() },
-            },
-          },
-        },
-      ],
-    })
-  );
-
-  return {
-    id: newProductId,
-    ...product,
-  };
-};
+  try {
+    const command = new TransactWriteItemsCommand({
+      TransactItems: transactItems,
+    });
+    await dbClient.send(command);
+    return {
+      ...product,
+      count: stock.count,
+    };
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}

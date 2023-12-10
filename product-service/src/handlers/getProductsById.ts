@@ -8,7 +8,7 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log(`lambda: getProductsById, event: ${JSON.stringify(event)}`);
+    console.log(`getProductsById, event: ${JSON.stringify(event)}`);
 
     const productId = event.pathParameters?.productId?.trim();
     if (!productId) {

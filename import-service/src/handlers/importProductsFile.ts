@@ -10,7 +10,7 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log('ImportProductsFile event:', event);
+    console.log('ImportProductsFile:', event);
 
     const { value, error } = ImportUrl.validate(
       event.queryStringParameters || {}

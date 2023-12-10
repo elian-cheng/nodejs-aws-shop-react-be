@@ -6,7 +6,7 @@ import { ErrorMessages, StatusCodes } from '../utils/constants';
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  console.log(`lambda: getProductsList, event: ${JSON.stringify(event)}`);
+  console.log(`getProductsList, event: ${JSON.stringify(event)}`);
 
   try {
     const availableProducts = await getProductsList();

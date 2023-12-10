@@ -1,40 +1,9 @@
 import { StatusCodes } from './constants';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
-import { ICsvRow } from './interfaces';
 import { moveS3Object } from './s3helpers';
 import ProductSchema from '../schemas/product';
-import Joi from 'joi';
-
-export type ValidationError = string;
-export type ValidationResult<T> =
-  | {
-      success: true;
-      data: T;
-    }
-  | { success: false; errors: ValidationError[] };
-
-const validatePayload = async <T>(
-  payload: unknown,
-  schema: Joi.ObjectSchema<T>
-): Promise<ValidationResult<T>> => {
-  try {
-    const value = await schema.validateAsync(payload, { abortEarly: false });
-    return { success: true, data: value };
-  } catch (error) {
-    const validationError = error as Joi.ValidationError;
-    const errorMessages = validationError.details.map(
-      (detail) => detail.message
-    );
-    return { success: false, errors: errorMessages };
-  }
-};
-
-const validateCsvRow = async (
-  row: ICsvRow
-): Promise<ValidationResult<ICsvRow>> => {
-  return validatePayload<ICsvRow>(row, ProductSchema);
-};
+import { sendSQSMessage } from '../lib/sqs';
 
 export const sendResponse = (
   statusCode: number = StatusCodes.OK,
@@ -79,49 +48,37 @@ export const getMimeTypeByFileExtension = (fileExt: string): string => {
   }
 };
 
+async function* readStream(stream: Readable): AsyncGenerator<any> {
+  const iterator = stream[Symbol.asyncIterator]();
+
+  while (true) {
+    const { value, done } = await iterator.next();
+    if (done) {
+      break;
+    }
+    yield value;
+  }
+}
+
 export const readCSVFileStream = async (
   stream: Readable,
   bucket?: string,
   from?: string,
   to?: string
 ): Promise<void> => {
-  const rows: ICsvRow[] = [];
-
   const parser = stream.pipe(csv());
+  for await (const data of readStream(parser)) {
+    const { error } = ProductSchema.validate(data);
+    if (error) {
+      console.log('Validation error', error);
+      continue;
+    }
+    await sendSQSMessage(process.env.PRODUCT_QUEUE!, data);
+  }
 
-  parser
-    .on('data', (data: ICsvRow) => {
-      console.log('CSV Data:', data);
-      rows.push(data);
-    })
-    .on('end', async () => {
-      console.log('End of the stream reached');
-
-      const validationResults = await Promise.all(
-        rows.map((row) => validateCsvRow(row))
-      );
-
-      const invalidRows = validationResults.filter((result) => !result.success);
-
-      const errorMessages = invalidRows.flatMap((result) =>
-        result.success ? [] : result.errors
-      );
-
-      if (errorMessages.length > 0) {
-        console.error('Validation error:', errorMessages.join(', '));
-        return Promise.reject(new Error('CSV validation error'));
-      }
-
-      if (bucket && from && to) {
-        await moveS3Object({ from, to, bucket });
-        console.log('File moved');
-      }
-
-      return Promise.resolve();
-    })
-    .on('error', (err: unknown) => {
-      const error = err as Error;
-      console.error('Error during CSV parsing:', error);
-      return Promise.reject(error);
-    });
+  console.log('End of the file stream');
+  if (bucket && from && to) {
+    await moveS3Object({ from, to, bucket });
+    console.log('File moved');
+  }
 };
