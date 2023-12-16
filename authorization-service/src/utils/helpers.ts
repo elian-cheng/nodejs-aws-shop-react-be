@@ -13,7 +13,7 @@ export const generatePolicy = (
         {
           Action: 'execute-api:Invoke',
           Effect: effect,
-          Resource: resource,
+          Resource: [resource],
         },
       ],
     },

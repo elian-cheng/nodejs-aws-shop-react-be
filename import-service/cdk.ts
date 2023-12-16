@@ -1,19 +1,25 @@
 import * as cdk from 'aws-cdk-lib';
-import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as s3notifications from 'aws-cdk-lib/aws-s3-notifications';
-import * as sqs from 'aws-cdk-lib/aws-sqs';
 import {
   NodejsFunction,
   NodejsFunctionProps,
 } from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3notifications from 'aws-cdk-lib/aws-s3-notifications';
+import * as apiGateway from '@aws-cdk/aws-apigatewayv2-alpha';
+import { HttpLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import {
+  HttpLambdaAuthorizer,
+  HttpLambdaResponseType,
+} from '@aws-cdk/aws-apigatewayv2-authorizers-alpha';
 
 import { REGION } from './src/utils/constants';
 import { config } from 'dotenv';
 config();
 
 const API_NAME = 'import';
+const API_PATH = `/${API_NAME}`;
 
 const { CREATE_PRODUCT_QUEUE_ARN, AUTHORIZER_LAMBDA_ARN } = process.env;
 
@@ -79,19 +85,16 @@ const basicAuthorizer = lambda.Function.fromFunctionArn(
   AUTHORIZER_LAMBDA_ARN!
 );
 
-const authorizer = new apiGateway.TokenAuthorizer(
-  stack,
-  'ImportServiceAuthorizer',
-  {
-    handler: basicAuthorizer,
-  }
-);
+const authorizer = new HttpLambdaAuthorizer('Authorizer', basicAuthorizer, {
+  responseTypes: [HttpLambdaResponseType.IAM],
+  resultsCacheTtl: cdk.Duration.seconds(0),
+});
 
-new lambda.CfnPermission(stack, 'BasicAuthorizerInvoke Permissions', {
+new lambda.CfnPermission(stack, 'BasicAuthorizerPermission', {
   action: 'lambda:InvokeFunction',
   functionName: basicAuthorizer.functionName,
   principal: 'apigateway.amazonaws.com',
-  sourceArn: authorizer.authorizerArn,
+  sourceAccount: stack.account,
 });
 
 productQueue.grantSendMessages(importFileParser);
@@ -108,35 +111,24 @@ bucket.addEventNotification(
   }
 );
 
-const api = new apiGateway.RestApi(stack, 'ImportApi', {
-  defaultCorsPreflightOptions: {
+const api = new apiGateway.HttpApi(stack, 'ImportApi', {
+  corsPreflight: {
     allowHeaders: ['*'],
-    allowOrigins: apiGateway.Cors.ALL_ORIGINS,
-    allowMethods: apiGateway.Cors.ALL_METHODS,
+    allowMethods: [apiGateway.CorsHttpMethod.ANY],
+    allowOrigins: ['*'],
   },
 });
 
-api.root
-  .addResource(API_NAME)
-  .addMethod('GET', new apiGateway.LambdaIntegration(importProductsFile), {
-    requestParameters: { 'method.request.querystring.name': true },
-    authorizer,
-  });
-
-api.addGatewayResponse('GatewayResponseUnauthorized', {
-  type: apiGateway.ResponseType.UNAUTHORIZED,
-  responseHeaders: {
-    'Access-Control-Allow-Origin': "'*'",
-    'Access-Control-Allow-Headers': "'*'",
-    'Access-Control-Allow-Methods': "'GET,POST,PUT,DELETE'",
-    'Access-Control-Allow-Credentials': "'true'",
-  },
+api.addRoutes({
+  path: `${API_PATH}`,
+  methods: [apiGateway.HttpMethod.GET],
+  integration: new HttpLambdaIntegration(
+    'ImportProductsFileLambdaIntegration',
+    importProductsFile
+  ),
+  authorizer,
 });
 
 new cdk.CfnOutput(stack, 'ApiUrl', {
   value: `${api.url}${API_NAME}`,
-});
-
-new cdk.CfnOutput(stack, 'AuthorizerArn', {
-  value: authorizer.authorizerArn,
 });
