@@ -4,7 +4,7 @@ info:
   description: 'Import Service for [Elian-AWS-React-Shop](https://github.com/elian-cheng/nodejs-aws-shop-react).'
   version: 1.0.0
 servers:
-  - url: https://m6el93alk8.execute-api.eu-north-1.amazonaws.com
+  - url: https://n28hh2k9gd.execute-api.eu-north-1.amazonaws.com/prod
 tags:
   - name: Import
     description: Import related endpoints
@@ -14,6 +14,8 @@ paths:
       tags:
         - Import
       summary: Get import presigned URL
+      security:
+        - BasicAuth: []
       parameters:
         - name: 'name'
           in: 'query'
@@ -36,3 +38,7 @@ components:
     SignedUrl:
       type: string
       description: Presigned URL
+  securitySchemas:
+    BasicAuth:
+      type: http
+      scheme: basic
