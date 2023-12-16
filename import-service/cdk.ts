@@ -10,10 +10,13 @@ import {
   NodejsFunctionProps,
 } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { REGION } from './src/utils/constants';
-import 'dotenv/config';
+import { config } from 'dotenv';
+config();
 
 const API_NAME = 'import';
 const API_PATH = `/${API_NAME}`;
+
+const { CREATE_PRODUCT_QUEUE_ARN } = process.env;
 
 const app = new cdk.App();
 const stack = new cdk.Stack(app, 'ElianRssImportServiceStack', {
@@ -23,7 +26,7 @@ const stack = new cdk.Stack(app, 'ElianRssImportServiceStack', {
 const productQueue = sqs.Queue.fromQueueArn(
   stack,
   'ElianRssProductQueue',
-  process.env.CREATE_PRODUCT_QUEUE_ARN!
+  CREATE_PRODUCT_QUEUE_ARN!
 );
 
 const bucket = new s3.Bucket(stack, 'ElianRssImportBucket', {

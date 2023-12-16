@@ -21,7 +21,10 @@ export const handler = async (
       return sendResponse(StatusCodes.BAD_REQUEST, { message: error.message });
     }
 
-    const { name: fileName } = value;
+    // const { name: fileName } = value;
+    let { name: fileName } = value;
+
+    fileName = decodeURIComponent(fileName.replace(/\+/g, ' '));
 
     if (!fileName.toLowerCase().endsWith('.csv')) {
       return sendResponse(StatusCodes.BAD_REQUEST, {

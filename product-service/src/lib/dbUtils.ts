@@ -6,24 +6,23 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { IAvailableProduct, IProduct, IStock } from '../utils/interfaces';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+import { Table } from '../utils/constants';
 
 const dbClient = new DynamoDBClient({
   region: 'eu-north-1',
 });
-const productsTableName = process.env.PRODUCTS_TABLE_NAME ?? '';
-const stocksTableName = process.env.STOCKS_TABLE_NAME ?? '';
 
 export const getProductsList = async (): Promise<IAvailableProduct[]> => {
   try {
     const { Items: productItems } = await dbClient.send(
       new ScanCommand({
-        TableName: productsTableName,
+        TableName: Table.PRODUCTS,
       })
     );
 
     const { Items: stockItems } = await dbClient.send(
       new ScanCommand({
-        TableName: stocksTableName,
+        TableName: Table.STOCKS,
       })
     );
 
@@ -62,12 +61,12 @@ export const getProductById = async (
   return res.Items?.[0] ? unmarshall(res.Items[0]) : null;
 };
 
-export async function createProduct(
+export const createProduct = async (
   product: IProduct,
   stock: IStock,
   productsTableName: string,
   stocksTableName: string
-): Promise<IAvailableProduct> {
+): Promise<IAvailableProduct> => {
   const transactItems = [
     {
       Put: {
@@ -96,4 +95,4 @@ export async function createProduct(
     console.log(err);
     throw err;
   }
-}
+};
