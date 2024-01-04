@@ -4,7 +4,7 @@ info:
   description: 'Import Service for [Elian-AWS-React-Shop](https://github.com/elian-cheng/nodejs-aws-shop-react).'
   version: 1.0.0
 servers:
-  - url: https://n28hh2k9gd.execute-api.eu-north-1.amazonaws.com/prod
+  - url: https://2atwhq6z3f.execute-api.eu-north-1.amazonaws.com
 tags:
   - name: Import
     description: Import related endpoints
