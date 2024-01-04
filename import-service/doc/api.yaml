@@ -1,0 +1,44 @@
+openapi: 3.0.0
+info:
+  title: Import Service API
+  description: 'Import Service for [Elian-AWS-React-Shop](https://github.com/elian-cheng/nodejs-aws-shop-react).'
+  version: 1.0.0
+servers:
+  - url: https://2atwhq6z3f.execute-api.eu-north-1.amazonaws.com
+tags:
+  - name: Import
+    description: Import related endpoints
+paths:
+  /import:
+    get:
+      tags:
+        - Import
+      summary: Get import presigned URL
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: 'name'
+          in: 'query'
+          required: true
+          schema:
+            type: 'string'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedUrl'
+        '400':
+          description: Validation Error
+        '500':
+          description: Internal Server Error, default server error code
+components:
+  schemas:
+    SignedUrl:
+      type: string
+      description: Presigned URL
+  securitySchemas:
+    BasicAuth:
+      type: http
+      scheme: basic
