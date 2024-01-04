@@ -46,6 +46,7 @@ describe('getProductsById', () => {
       title: 'Test product',
       description: 'Test description',
       price: 55,
+      image: 'Test image',
     };
 
     const mockedStock = {

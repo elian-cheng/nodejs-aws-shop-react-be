@@ -24,13 +24,20 @@ export function transformRecords(record: SQSRecord): [IProduct, IStock] {
   const { messageId: id } = record;
   const payload = JSON.parse(record.body);
 
-  const { title = '', description = '', price = 0, count = 0 } = payload;
+  const {
+    title = '',
+    description = '',
+    price = 0,
+    count = 0,
+    image = '',
+  } = payload;
 
   const product: IProduct = {
     id,
     title,
     description,
     price: +price,
+    image,
   };
 
   const stock: IStock = {

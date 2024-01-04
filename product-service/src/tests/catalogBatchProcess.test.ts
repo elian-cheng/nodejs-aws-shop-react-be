@@ -8,6 +8,7 @@ interface IProduct {
   title: string;
   description: string;
   price: number;
+  image: string;
 }
 
 interface IStock {
@@ -23,14 +24,14 @@ export const mockEvent: SQSEvent = {
   Records: [
     generateMockSQSRecord(
       '123',
-      '{"title":"iPhone 13","price":999.99,"count":50}',
+      '{"title":"iPhone 13","price":999.99,"count":50,"image":"https://elian-cheng-elyte-online-store.netlify.app/assets/img/11037535671-l.jpg"}',
       'aws:sqs',
       'test.fifo',
       'test-1'
     ),
     generateMockSQSRecord(
       '456',
-      '{"title":"ThinkPad X1 Carbon","price":1299.99,"count":20}',
+      '{"title":"ThinkPad X1 Carbon","price":1299.99,"count":20,image:"https://elian-cheng-elyte-online-store.netlify.app/assets/img/71114058551-l.jpg"}',
       'aws:sqs',
       'test.fifo',
       'test-1'
@@ -89,6 +90,7 @@ describe('catalogBatchProcess', () => {
           description: product.description,
           price: product.price,
           count: stock.count,
+          image: product.image,
         });
       }
     );

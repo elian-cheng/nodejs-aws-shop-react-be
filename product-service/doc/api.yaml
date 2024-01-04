@@ -97,6 +97,9 @@ components:
         count:
           type: integer
           example: 10
+        image:
+          type: string
+          example: 'https://elian-cheng-elyte-online-store.netlify.app/assets/img/52026264101-l.jpg'
     ProductCreation:
       title: 'ProductCreation'
       type: 'object'
@@ -113,3 +116,6 @@ components:
         count:
           type: 'integer'
           example: 15
+        image:
+          type: string
+          example: 'https://elian-cheng-elyte-online-store.netlify.app/assets/img/52026264101-l.jpg'

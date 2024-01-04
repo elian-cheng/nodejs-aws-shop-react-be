@@ -23,13 +23,14 @@ export const handler = async (
 
     const id = randomUUID();
 
-    const { title, description, price, count } = value;
+    const { title, description, price, count, image } = value;
 
     const product: IProduct = {
       id,
       title,
       description,
       price,
+      image,
     };
 
     const stock: IStock = {
@@ -43,6 +44,7 @@ export const handler = async (
       description,
       price,
       count,
+      image,
     };
 
     const res = await createProduct(

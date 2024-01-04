@@ -44,6 +44,7 @@ describe('getProductsList', () => {
         description: 'Description 1',
         price: 10,
         count: 5,
+        image: 'Image 1',
       },
       {
         id: '2',
@@ -51,6 +52,7 @@ describe('getProductsList', () => {
         description: 'Description 2',
         price: 20,
         count: 10,
+        image: 'Image 2',
       },
     ];
 
@@ -78,8 +80,20 @@ describe('getProductsList', () => {
 
   it('should return 200 and products with count: 0 when no stocks are found', async () => {
     const mockedProductItems = [
-      { id: '1', title: 'Product 1', description: 'Description 1', price: 10 },
-      { id: '2', title: 'Product 2', description: 'Description 2', price: 20 },
+      {
+        id: '1',
+        title: 'Product 1',
+        description: 'Description 1',
+        price: 10,
+        image: 'Image 1',
+      },
+      {
+        id: '2',
+        title: 'Product 2',
+        description: 'Description 2',
+        price: 20,
+        image: 'Image 2',
+      },
     ];
 
     getProductsListSpy.mockResolvedValueOnce(

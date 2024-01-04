@@ -42,6 +42,7 @@ describe('createProduct', () => {
       description: 'Mock description',
       price: 10,
       count: 1,
+      image: 'Mock image',
     };
 
     createProductSpy.mockResolvedValueOnce(mockProduct);
@@ -51,6 +52,7 @@ describe('createProduct', () => {
       price: 10,
       title: 'Mock title',
       count: 1,
+      image: 'Mock image',
     });
 
     const response = await handler(mockEvent);
@@ -81,6 +83,7 @@ describe('createProduct', () => {
       price: 1,
       title: 'Mock title',
       count: 1,
+      image: 'Mock image',
     });
 
     const response = await handler(mockEvent);
